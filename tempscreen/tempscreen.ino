@@ -26,7 +26,7 @@ const int TS_LEFT = 892,TS_RT = 164,TS_TOP = 108,TS_BOT = 901;
 
 TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 
-Adafruit_GFX_Button up_min_btn, down_min_btn, up_max_btn, down_max_btn;
+Adafruit_GFX_Button up_min_btn, down_min_btn, up_max_btn, down_max_btn, settings_btn, save_btn;
 
 int pixel_x, pixel_y;     //Touch_getXY() updates global vars
 bool Touch_getXY(void)
@@ -63,13 +63,14 @@ int minTemp = 19;
 int currentTemp;
 int tempTemp;
 bool change = false;
+bool inSettings = false;
 
 void setup(void)
 {
     sensors.begin();
     Serial.begin(9600);
     sensors.requestTemperatures();
-    currentTemp=sensors.getTempCByIndex(0);
+    currentTemp=floor(sensors.getTempCByIndex(0));
     tempTemp = currentTemp;
     Serial.println(tempTemp);
     uint16_t ID = tft.readID();
@@ -103,168 +104,218 @@ void display(void) {
     tft.print(maxTemp);
     tft.println(" C");
 
+    settings_btn.initButton(&tft,  250, 20, 112, 28, WHITE, BLACK, WHITE, "settings", 2);
+    settings_btn.drawButton(false);
+
+    save_btn.initButton(&tft,  250, 20, 112, 28, WHITE, BLACK, WHITE, "save", 2);
     
     up_min_btn.initButton(&tft,  100, 160, 50, 24, WHITE, CYAN, BLACK, "up", 2);
-    up_min_btn.drawButton(false);
 
     down_min_btn.initButton(&tft,  100, 215, 50, 24, WHITE, CYAN, BLACK, "down", 2);
-    down_min_btn.drawButton(false);
-
 
     up_max_btn.initButton(&tft,  270, 160, 50, 24, WHITE, CYAN, BLACK, "up", 2);
-    up_max_btn.drawButton(false);
 
     down_max_btn.initButton(&tft,  270, 215, 50, 24, WHITE, CYAN, BLACK, "down", 2);
-    down_max_btn.drawButton(false);
 }
 
 void loop(void)
-{   
-//    sensors.requestTemperatures();
-//    tempTemp=sensors.getTempCByIndex(0);
-//
-//    Serial.println(tempTemp != currentTemp);
-//    Serial.println(tempTemp == currentTemp);
-//    
-//    if (tempTemp != currentTemp) {
-//      Serial.println("I'm in");
-//      currentTemp == tempTemp;
-//      tft.setCursor(100, 64);
-//      if (change) {
-//        tft.setTextColor(GREEN); 
-//      } else {
-//       tft.setTextColor(RED);   
-//      }
-//      tft.setTextSize(6);
-//      tft.print(currentTemp);
-//      tft.println(" C");
-//
-//      tft.setCursor(100, 64);
-//      tft.setTextColor(WHITE);  
-//      tft.setTextSize(6);
-//      tft.print(currentTemp);
-//      tft.println(" C");
-//    }
-//
-//    if (currentTemp == maxTemp) {
-//      tft.fillScreen(GREEN);
-//      display();
-//      change = true;
-//    } else if (currentTemp == minTemp - 1){
-//      tft.fillScreen(RED);
-//      display();
-//      change = false;
-//    } else if (currentTemp == maxTemp + 1) {
-//      tft.fillScreen(RED);
-//      display();
-//      change = false;
-//    }
-//    
+{       
     bool down = Touch_getXY();
-    up_min_btn.press(down && up_min_btn.contains(pixel_x, pixel_y));
-    down_min_btn.press(down && down_min_btn.contains(pixel_x, pixel_y));
-    up_max_btn.press(down && up_max_btn.contains(pixel_x, pixel_y));
-    down_max_btn.press(down && down_max_btn.contains(pixel_x, pixel_y));
+    settings_btn.press(down && settings_btn.contains(pixel_x, pixel_y));
+    Serial.println(pixel_x);
+    Serial.println(pixel_y);
+    
+    if (settings_btn.justPressed() && !inSettings) {
+      inSettings = true;
+      if (inSettings) {
+        settings_btn.drawButton(true);
 
-    // UP MIN
-    if (up_min_btn.justReleased())
-        up_min_btn.drawButton();
-    if (up_min_btn.justPressed()) {
-        up_min_btn.drawButton(true);
+        if (change) {
+          tft.fillRect(250, 20, 112, 28, GREEN);
+        } else {
+          tft.fillRect(250, 20, 112, 28, RED);
+        }
+
+        save_btn.drawButton(false);
+        up_min_btn.drawButton(false);
+        down_min_btn.drawButton(false);
+        up_max_btn.drawButton(false);
+        down_max_btn.drawButton(false);
+      }
+
+    }
+
+    if (!inSettings) {
+      sensors.requestTemperatures();
+      tempTemp=floor(sensors.getTempCByIndex(0));
+      Serial.println(tempTemp);
+      
+      if (tempTemp != currentTemp) {
+        Serial.println("I'm in");
+        currentTemp == tempTemp;
+        tft.setCursor(100, 64);
         if (change) {
           tft.setTextColor(GREEN); 
         } else {
          tft.setTextColor(RED);   
         }
-        tft.setTextSize(2.5);
-        tft.setCursor(16, 180);
-        tft.print("MIN: ");
-        tft.print(minTemp);
+        tft.setTextSize(6);
+        tft.print(currentTemp);
         tft.println(" C");
-
-        minTemp++;
-        tft.setTextColor(YELLOW);  
-        tft.setTextSize(2.5);
-        tft.setCursor(16, 180);
-        tft.print("MIN: ");
-        tft.print(minTemp);
+  
+        tft.setCursor(100, 64);
+        tft.setTextColor(WHITE);  
+        tft.setTextSize(6);
+        tft.print(currentTemp);
         tft.println(" C");
+      }
+  
+      if (currentTemp == maxTemp) {
+        tft.fillScreen(GREEN);
+        display();
+        change = true;
+      } else if (currentTemp == minTemp - 1){
+        tft.fillScreen(RED);
+        display();
+        change = false;
+      } else if (currentTemp == maxTemp + 1) {
+        tft.fillScreen(RED);
+        display();
+        change = false;
+      }
+      
+    } else {
+      save_btn.press(down && save_btn.contains(pixel_x, pixel_y));
+      up_min_btn.press(down && up_min_btn.contains(pixel_x, pixel_y));
+      down_min_btn.press(down && down_min_btn.contains(pixel_x, pixel_y));
+      up_max_btn.press(down && up_max_btn.contains(pixel_x, pixel_y));
+      down_max_btn.press(down && down_max_btn.contains(pixel_x, pixel_y));
 
-    }
+      // SAVE
+      if (save_btn.justPressed()) {
+          inSettings = false;
+          save_btn.drawButton(true);
+  
+          if (change) {
+            tft.fillRect(250, 20, 112, 28, GREEN);
+            tft.fillRect(50, 130, 50, 24, GREEN);
+            tft.fillRect(100, 215, 50, 24, GREEN);
+            tft.fillRect(270, 160, 50, 24, GREEN);
+            tft.fillRect(270, 215, 50, 24, GREEN);
+            
+          } else {
+            tft.fillRect(250, 20, 112, 28, RED);
+            tft.fillRect(75, 148, 50, 24, RED);
+            tft.fillRect(75, 203, 50, 24, RED);
+            tft.fillRect(245, 148, 50, 24, RED);
+            tft.fillRect(245, 203, 50, 24, RED);
+          }
 
-    // DOWN MIN
-    if (down_min_btn.justReleased())
-        down_min_btn.drawButton();
-    if (down_min_btn.justPressed()) {
-        down_min_btn.drawButton(true);
-        if (change) {
-          tft.setTextColor(GREEN); 
-        } else {
-         tft.setTextColor(RED);   
-        } 
-        tft.setTextSize(2.5);
-        tft.setCursor(16, 180);
-        tft.print("MIN: ");
-        tft.print(minTemp);
-        tft.println(" C");
+          settings_btn.drawButton();
 
-        minTemp--;
-        tft.setTextColor(YELLOW);  
-        tft.setTextSize(2.5);
-        tft.setCursor(16, 180);
-        tft.print("MIN: ");
-        tft.print(minTemp);
-        tft.println(" C");
-    }
+      }
 
-    // UP MAX
-    if (up_max_btn.justReleased())
-        up_max_btn.drawButton();
-    if (up_max_btn.justPressed()) {
-        up_max_btn.drawButton(true);
-        if (change) {
-          tft.setTextColor(GREEN); 
-        } else {
-         tft.setTextColor(RED);   
-        }
-        tft.setTextSize(2.5);
-        tft.setCursor(190, 180);
-        tft.print("MAX: ");
-        tft.print(maxTemp);
-        tft.println(" C");
-
-        maxTemp++;
-        tft.setTextColor(YELLOW);  
-        tft.setTextSize(2.5);
-        tft.setCursor(190, 180);
-        tft.print("MAX: ");
-        tft.print(maxTemp);
-        tft.println(" C");
-    }
-
-    // DOWN MAX
-    if (down_max_btn.justReleased())
-        down_max_btn.drawButton();
-    if (down_max_btn.justPressed()) {
-        down_max_btn.drawButton(true);
-        if (change) {
-          tft.setTextColor(GREEN); 
-        } else {
-         tft.setTextColor(RED);   
-        }
-        tft.setTextSize(2.5);
-        tft.setCursor(190, 180);
-        tft.print("MAX: ");
-        tft.print(maxTemp);
-        tft.println(" C");
-
-        maxTemp--;
-        tft.setTextColor(YELLOW);  
-        tft.setTextSize(2.5);
-        tft.setCursor(190, 180);
-        tft.print("MAX: ");
-        tft.print(maxTemp);
-        tft.println(" C");
-
+     
+      // UP MIN
+      if (up_min_btn.justReleased())
+          up_min_btn.drawButton();
+      if (up_min_btn.justPressed()) {
+          up_min_btn.drawButton(true);
+          if (change) {
+            tft.setTextColor(GREEN); 
+          } else {
+           tft.setTextColor(RED);   
+          }
+          tft.setTextSize(2.5);
+          tft.setCursor(16, 180);
+          tft.print("MIN: ");
+          tft.print(minTemp);
+          tft.println(" C");
+  
+          minTemp++;
+          tft.setTextColor(YELLOW);  
+          tft.setTextSize(2.5);
+          tft.setCursor(16, 180);
+          tft.print("MIN: ");
+          tft.print(minTemp);
+          tft.println(" C");
+  
+      }
+  
+      // DOWN MIN
+      if (down_min_btn.justReleased())
+          down_min_btn.drawButton();
+      if (down_min_btn.justPressed()) {
+          down_min_btn.drawButton(true);
+          if (change) {
+            tft.setTextColor(GREEN); 
+          } else {
+           tft.setTextColor(RED);   
+          } 
+          tft.setTextSize(2.5);
+          tft.setCursor(16, 180);
+          tft.print("MIN: ");
+          tft.print(minTemp);
+          tft.println(" C");
+  
+          minTemp--;
+          tft.setTextColor(YELLOW);  
+          tft.setTextSize(2.5);
+          tft.setCursor(16, 180);
+          tft.print("MIN: ");
+          tft.print(minTemp);
+          tft.println(" C");
+      }
+  
+      // UP MAX
+      if (up_max_btn.justReleased())
+          up_max_btn.drawButton();
+      if (up_max_btn.justPressed()) {
+          up_max_btn.drawButton(true);
+          if (change) {
+            tft.setTextColor(GREEN); 
+          } else {
+           tft.setTextColor(RED);   
+          }
+          tft.setTextSize(2.5);
+          tft.setCursor(190, 180);
+          tft.print("MAX: ");
+          tft.print(maxTemp);
+          tft.println(" C");
+  
+          maxTemp++;
+          tft.setTextColor(YELLOW);  
+          tft.setTextSize(2.5);
+          tft.setCursor(190, 180);
+          tft.print("MAX: ");
+          tft.print(maxTemp);
+          tft.println(" C");
+      }
+  
+      // DOWN MAX
+      if (down_max_btn.justReleased())
+          down_max_btn.drawButton();
+      if (down_max_btn.justPressed()) {
+          down_max_btn.drawButton(true);
+          if (change) {
+            tft.setTextColor(GREEN); 
+          } else {
+           tft.setTextColor(RED);   
+          }
+          tft.setTextSize(2.5);
+          tft.setCursor(190, 180);
+          tft.print("MAX: ");
+          tft.print(maxTemp);
+          tft.println(" C");
+  
+          maxTemp--;
+          tft.setTextColor(YELLOW);  
+          tft.setTextSize(2.5);
+          tft.setCursor(190, 180);
+          tft.print("MAX: ");
+          tft.print(maxTemp);
+          tft.println(" C");
+      }
+      
     }
 }
