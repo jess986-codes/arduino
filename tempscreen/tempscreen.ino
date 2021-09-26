@@ -86,12 +86,22 @@ void setup(void)
 }
 
 void display(void) {
+
+    if (change) {
+      tft.setTextColor(BLACK); 
+    } else {
+     tft.setTextColor(WHITE);   
+    }
     tft.setCursor(100, 64);
-    tft.setTextColor(WHITE);  
     tft.setTextSize(6);
     tft.print(currentTemp);
     tft.println(" C");
 
+    if (change) {
+      tft.setTextColor(BLUE); 
+    } else {
+     tft.setTextColor(YELLOW);   
+    }
     tft.setTextColor(YELLOW);  
     tft.setTextSize(2.5);
     tft.setCursor(16, 180);
@@ -127,32 +137,30 @@ void loop(void)
     
     if (settings_btn.justPressed() && !inSettings) {
       inSettings = true;
-      if (inSettings) {
-        settings_btn.drawButton(true);
+      settings_btn.drawButton(true);
 
-        if (change) {
-          tft.fillRect(250, 20, 112, 28, GREEN);
-        } else {
-          tft.fillRect(250, 20, 112, 28, RED);
-        }
-
-        save_btn.drawButton(false);
-        up_min_btn.drawButton(false);
-        down_min_btn.drawButton(false);
-        up_max_btn.drawButton(false);
-        down_max_btn.drawButton(false);
+      if (change) {
+        tft.fillRect(250, 20, 112, 28, GREEN);
+      } else {
+        tft.fillRect(250, 20, 112, 28, RED);
       }
+
+      save_btn.drawButton(false);
+      up_min_btn.drawButton(false);
+      down_min_btn.drawButton(false);
+      up_max_btn.drawButton(false);
+      down_max_btn.drawButton(false);
 
     }
 
     if (!inSettings) {
       sensors.requestTemperatures();
-      tempTemp=floor(sensors.getTempCByIndex(0));
+      tempTemp = floor(sensors.getTempCByIndex(0));
       Serial.println(tempTemp);
       
       if (tempTemp != currentTemp) {
         Serial.println("I'm in");
-        currentTemp == tempTemp;
+        currentTemp = tempTemp;
         tft.setCursor(100, 64);
         if (change) {
           tft.setTextColor(GREEN); 
@@ -162,26 +170,32 @@ void loop(void)
         tft.setTextSize(6);
         tft.print(currentTemp);
         tft.println(" C");
+
+        if (change) {
+          tft.setTextColor(BLACK); 
+        } else {
+         tft.setTextColor(WHITE);   
+        }
   
         tft.setCursor(100, 64);
-        tft.setTextColor(WHITE);  
         tft.setTextSize(6);
         tft.print(currentTemp);
         tft.println(" C");
       }
   
-      if (currentTemp == maxTemp) {
+      if (currentTemp <= maxTemp && !change) {
+        Serial.println(change);
+        change = true;
         tft.fillScreen(GREEN);
         display();
-        change = true;
-      } else if (currentTemp == minTemp - 1){
+      } else if (currentTemp < minTemp && change){
+        change = false;
         tft.fillScreen(RED);
         display();
+      } else if (currentTemp > maxTemp + 1 && change) {
         change = false;
-      } else if (currentTemp == maxTemp + 1) {
         tft.fillScreen(RED);
         display();
-        change = false;
       }
       
     } else {
@@ -198,10 +212,10 @@ void loop(void)
   
           if (change) {
             tft.fillRect(250, 20, 112, 28, GREEN);
-            tft.fillRect(50, 130, 50, 24, GREEN);
-            tft.fillRect(100, 215, 50, 24, GREEN);
-            tft.fillRect(270, 160, 50, 24, GREEN);
-            tft.fillRect(270, 215, 50, 24, GREEN);
+            tft.fillRect(75, 148, 50, 24, GREEN);
+            tft.fillRect(75, 203, 50, 24, GREEN);
+            tft.fillRect(245, 148, 50, 24, GREEN);
+            tft.fillRect(245, 203, 50, 24, GREEN);
             
           } else {
             tft.fillRect(250, 20, 112, 28, RED);
@@ -215,7 +229,6 @@ void loop(void)
 
       }
 
-     
       // UP MIN
       if (up_min_btn.justReleased())
           up_min_btn.drawButton();
@@ -231,9 +244,13 @@ void loop(void)
           tft.print("MIN: ");
           tft.print(minTemp);
           tft.println(" C");
-  
+
+          if (change) {
+            tft.setTextColor(BLUE); 
+          } else {
+           tft.setTextColor(YELLOW);   
+          }
           minTemp++;
-          tft.setTextColor(YELLOW);  
           tft.setTextSize(2.5);
           tft.setCursor(16, 180);
           tft.print("MIN: ");
@@ -257,7 +274,12 @@ void loop(void)
           tft.print("MIN: ");
           tft.print(minTemp);
           tft.println(" C");
-  
+
+          if (change) {
+            tft.setTextColor(BLUE); 
+          } else {
+           tft.setTextColor(YELLOW);   
+          }
           minTemp--;
           tft.setTextColor(YELLOW);  
           tft.setTextSize(2.5);
@@ -282,7 +304,12 @@ void loop(void)
           tft.print("MAX: ");
           tft.print(maxTemp);
           tft.println(" C");
-  
+
+          if (change) {
+            tft.setTextColor(BLUE); 
+          } else {
+           tft.setTextColor(YELLOW);   
+          }
           maxTemp++;
           tft.setTextColor(YELLOW);  
           tft.setTextSize(2.5);
@@ -307,7 +334,12 @@ void loop(void)
           tft.print("MAX: ");
           tft.print(maxTemp);
           tft.println(" C");
-  
+
+          if (change) {
+            tft.setTextColor(BLUE); 
+          } else {
+           tft.setTextColor(YELLOW);   
+          }
           maxTemp--;
           tft.setTextColor(YELLOW);  
           tft.setTextSize(2.5);
